@@ -1,7 +1,17 @@
-FROM alpine:3.13
+FROM cgr.dev/chainguard/python:latest-dev as builder
 COPY ./giropops-senhas /giropops-senhas
-RUN apk add --no-cache py3-pip && pip install --no-cache-dir -r /giropops-senhas/requirements.txt
 WORKDIR /giropops-senhas
-ENV REDIS_HOST=172.17.0.2
-RUN rm -rf /root/.cache /root/.cargo /usr/local/include /usr/local/share
-CMD flask run --host=0.0.0.0
+RUN pip install --user --no-cache-dir -r /giropops-senhas/requirements.txt
+
+FROM cgr.dev/chainguard/python:latest
+WORKDIR /giropops-senhas
+COPY --from=builder /giropops-senhas /giropops-senhas
+COPY --from=builder /home/nonroot/.local/lib/python3.11/site-packages /home/nonroot/.local/lib/python3.11/site-packages
+ENV REDIS_HOST=redis
+ENTRYPOINT [ "python", "-m", "flask", "run", "--host=0.0.0.0"]
+
+
+
+
+
+
